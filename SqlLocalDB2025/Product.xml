@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Product xmlns="http://schemas.microsoft.com/developer/2004/01/bootstrapper" ProductCode="Microsoft.SqlServer.SqlLocalDB.17.0">
+
+  <InstallChecks>
+    <FileCheck
+      Property="sqllocaldbVersion"
+      FileName="sqlservr.exe"
+      SearchPath="Program Files\Microsoft SQL Server\170\LocalDB\Binn"
+      SpecialFolder="WindowsVolume"
+     />
+  </InstallChecks>
+
+  <!--
+    PackageFiles: HomeSite is a symbolic name (resolved via Package.xml's
+    Strings block), not a literal URL.
+
+    IMPORTANT: a real copy of SqlLocalDB.msi must also sit in this same
+    folder (next to Product.xml) at build time. Visual Studio reads that
+    local file to compute the correct PublicKey (it's genuinely signed by
+    Microsoft) automatically — leaving PublicKey/Hash out of the XML lets
+    VS fill them in itself.
+  -->
+  <PackageFiles CopyAllPackageFiles="false">
+    <PackageFile
+      Name="SqlLocalDB.msi"
+      HomeSite="sqllocaldb2025_64"
+     />
+  </PackageFiles>
+
+  <Commands Reboot="Defer">
+    <Command PackageFile="SqlLocalDB.msi"
+             Arguments="IACCEPTSQLLOCALDBLICENSETERMS=YES"
+             EstimatedInstallSeconds="90">
+      <InstallConditions>
+        <!-- Skip install if an equal-or-newer LocalDB is already present -->
+        <BypassIf Property="sqllocaldbVersion" Compare="VersionGreaterThanOrEqualTo" Value="17.0.4065.4"/>
+        <FailIf Property="AdminUser" Compare="ValueEqualTo" Value="false" String="AdminRequired"/>
+        <!-- Block install on any platform other than x64 -->
+        <FailIf Property="ProcessorArchitecture" Compare="ValueNotEqualTo" Value="amd64" String="InvalidPlatformOS"/>
+        <!-- Block install on pre-Windows 10 -->
+        <FailIf Property="VersionNT" Compare="VersionLessThan" Value="10.00" String="InvalidPlatformOS"/>
+      </InstallConditions>
+      <ExitCodes>
+        <ExitCode Value="0" Result="Success" />
+        <ExitCode Value="1641" Result="SuccessReboot" />
+        <ExitCode Value="3010" Result="SuccessReboot" />
+        <DefaultExitCode Result="Fail" FormatMessageFromSystem="true" String="GeneralFailure" />
+      </ExitCodes>
+    </Command>
+  </Commands>
+</Product>
